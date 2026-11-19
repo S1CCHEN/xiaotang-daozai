@@ -78,6 +78,7 @@ jobs:
         shell: pwsh
         env:
           DAOZAI_FORK_REPO: ${{ github.repository }}
+          PYTHONIOENCODING: utf-8
         run: |
           python .daozai-patch/apply_patch.py src .daozai-patch
           if ($LASTEXITCODE -ne 0) { throw '补丁失败' }
