@@ -93,6 +93,19 @@ jobs:
           $nsis = ./upstream-src/scripts/get-nsis.ps1 -Directory $env:RUNNER_TEMP
           "NSIS=$nsis" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: 补齐中文诊断脚本（tar 解压可能丢失中文文件名）
+        if: steps.ver.outputs.need == 'true'
+        shell: pwsh
+        run: |
+          # 从 fork 检出目录（英文路径、编码正常）复制诊断 cmd 到待打包源码，
+          # 用通配符匹配，避免在脚本里写中文字面量导致编码问题。
+          $src = Get-ChildItem -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'installer') -Filter '*.cmd' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $src) { throw 'fork 检出目录里找不到诊断 cmd' }
+          $dest = Join-Path $env:GITHUB_WORKSPACE 'upstream-src\installer'
+          if (-not (Test-Path -LiteralPath $dest)) { New-Item -ItemType Directory -Path $dest -Force | Out-Null }
+          Copy-Item -LiteralPath $src.FullName -Destination $dest -Force
+          Write-Host "已复制: $($src.Name) -> upstream-src\installer"
+
       - name: 编译并打包
         if: steps.ver.outputs.need == 'true'
         shell: pwsh
